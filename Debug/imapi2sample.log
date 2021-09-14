@@ -1,0 +1,13 @@
+﻿cl : command line warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  imapi2sample.cpp
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1316,13): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1316,13): message : consider using '%ls' in the format string
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1316,13): message : consider using '%lls' in the format string
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1316,13): message : consider using '%Ls' in the format string
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1316,13): message : consider using '%ws' in the format string
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1605,13): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1605,13): message : consider using '%ls' in the format string
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1605,13): message : consider using '%lls' in the format string
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1605,13): message : consider using '%Ls' in the format string
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\imapi2sample.cpp(1605,13): message : consider using '%ws' in the format string
+  imapi2sample.vcxproj -> Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\Debug\imapi2sample.exe

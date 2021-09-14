@@ -1,0 +1,2 @@
+X:\windows classic samples\Windows-classic-samples-main\Samples\Win7Samples\winbase\imapi\imapi2sample\Release\imapi2sample.exe
+Z:\HPE Work\Win7SamplesImapi\imapi\imapi2sample\Release\imapi2sample.exe
