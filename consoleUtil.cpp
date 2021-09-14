@@ -21,8 +21,7 @@ VOID OverwriteCurrentLine()
            );
     return;
 }
-VOID
-UpdatePercentageDisplay(
+VOID UpdatePercentageDisplay(
     IN ULONG Numerator,
     IN ULONG Denominator
     )

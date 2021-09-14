@@ -1,0 +1,20 @@
+﻿  AudioEvent.cpp
+  AudioWriter.cpp
+  CdWriter.cpp
+  consoleUtil.cpp
+  DataWriter.cpp
+  DataWriter2Event.cpp
+  DiscMaster2Event.cpp
+  EjectClose.cpp
+  Erase2Event.cpp
+  EraseMedia.cpp
+  GetDiscRecorder.cpp
+  ImageWriter.cpp
+  ListAllRecorders.cpp
+  RawWriter.cpp
+  RawWriter2Event.cpp
+  Utilities.cpp
+  Generating Code...
+LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/OPT:ICF' specification
+MSVCRT.lib(exe_winmain.obj) : error LNK2019: unresolved external symbol _WinMain@16 referenced in function "int __cdecl __scrt_common_main_seh(void)" (?__scrt_common_main_seh@@YAHXZ)
+Z:\CD-Writer\Release\cdwriter.exe : fatal error LNK1120: 1 unresolved externals

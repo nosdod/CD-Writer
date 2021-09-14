@@ -1,7 +1,6 @@
-
 #pragma once
-#ifndef _IMAPI2TEST_COMMON_
-#define _IMAPI2TEST_COMMON_
+#ifndef _CDWRITER_COMMON_H_
+#define _CDWRITER_COMMON_H_
 
 #include <tchar.h>
 #include <string.h>
@@ -27,7 +26,7 @@
 #include "Erase2Event.h"
 #include "AudioEvent.h"
 #include "RawWriter2Event.h"
-#include "imapi2sample.h"
+#include "cdwriter.h"
 
 // shlwapip.h
 #ifdef OFFSETOFCLASS
@@ -125,18 +124,33 @@ typedef struct _PROGRAM_OPTIONS {
 
 // Function prototypes
 
-// from util.cpp
+// from Utilities.cpp
+DWORD GetSecondsElapsed(SYSTEMTIME* StartTime, SYSTEMTIME* EndTime);
+void CalcElapsedTime(SYSTEMTIME* StartTime,SYSTEMTIME* FinishTime,SYSTEMTIME* ElapsedTime);
 void PrintHR(HRESULT hr);
 
-// from imapi2sample.cpp
-HRESULT GetDiscRecorder(__in ULONG index, __out IDiscRecorder2 ** recorder);
-void CalcElapsedTime(
-   SYSTEMTIME * StartTime,
-   SYSTEMTIME * FinishTime,
-   SYSTEMTIME * ElapsedTime);
-
-// from erase.cpp
+// from EraseMedia.cpp
 HRESULT EraseMedia(ULONG index, BOOL full);
 
+// from ListAllRecorders.cpp
+HRESULT ListAllRecorders();
 
-#endif // _IMAPI2TEST_COMMON_
+// from DataWriter.cpp
+HRESULT DataWriter(PROGRAM_OPTIONS options);
+
+// from GetDiscRecorder.cpp
+HRESULT GetDiscRecorder(__in ULONG index, __out IDiscRecorder2** recorder);
+
+// from RawWriter.cpp
+HRESULT RawWriter(PROGRAM_OPTIONS options);
+
+// from AudioWriter.cpp
+HRESULT AudioWriter(PROGRAM_OPTIONS options);
+
+// from EjectClose.cpp
+HRESULT EjectClose(PROGRAM_OPTIONS options, BOOLEAN close);
+
+// from ImageWriter.cpp
+HRESULT ImageWriter(PROGRAM_OPTIONS options);
+
+#endif // _CDWRITER_COMMON_H_
