@@ -37,14 +37,16 @@ HRESULT EjectClose(PROGRAM_OPTIONS options, BOOLEAN close)
 
     if (SUCCEEDED(hr))
     {
-        VARIANT_BOOL canLoad = VARIANT_FALSE;
-        hr = recorder->get_DeviceCanLoadMedia(&canLoad);
+        VARIANT_BOOL canReload = VARIANT_FALSE;
+        // Check if the device can be reloaded by software after it has been ejected
+        hr = recorder->get_DeviceCanLoadMedia(&canReload);
         if (FAILED(hr))
         {
             printf("FAILED recorder->get_DeviceCanLoadMedia\n");
             PrintHR(hr);
         }
-        if (canLoad && close)
+
+        if (canReload && close)
         {
             hr = recorder->CloseTray();
             if (FAILED(hr))
@@ -53,14 +55,12 @@ HRESULT EjectClose(PROGRAM_OPTIONS options, BOOLEAN close)
                 PrintHR(hr);
             }
         }
-        else if (canLoad)
+
+        hr = recorder->EjectMedia();
+        if (FAILED(hr))
         {
-            hr = recorder->EjectMedia();
-            if (FAILED(hr))
-            {
-                printf("FAILED recorder->EjectMedia()\n");
-                PrintHR(hr);
-            }
+            printf("FAILED recorder->EjectMedia()\n");
+            PrintHR(hr);
         }
     }
 
