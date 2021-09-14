@@ -1,23 +1,36 @@
 #include "common.h"
 
-// Write audio to disc using disc at once
-HRESULT RawWriter(PROGRAM_OPTIONS options)
+// Write wav files to CD
+HRESULT AudioWriter(PROGRAM_OPTIONS options)
 {
     HRESULT hr = S_OK;
+    IDiscRecorder2* recorder = NULL;
+    IDiscFormat2TrackAtOnce* audioWriter = NULL;
+    CComObject<CAudioEvent>* eventSink = NULL;
 
-    ::ATL::CComPtr<IRawCDImageCreator> raw;
-    ::ATL::CComPtr<IStream> resultStream;
-    ATL::CComPtr<IDiscRecorder2> iDiscRecorder;
-    ATL::CComPtr<IDiscFormat2RawCD> iDiscFormatRaw;
-    ATL::CComObject<CTestRawWriter2Event>* events = NULL;
+    BOOLEAN bReturn = TRUE;
     ULONG index = options.WriterIndex;
 
-    // cocreate all burning classes
+    BSTR dir = ::SysAllocString(options.FileName);
+
+    // create a IDiscFormat2TrackAtOnce object
+    if (SUCCEEDED(hr))
+    {
+        hr = CoCreateInstance(CLSID_MsftDiscFormat2TrackAtOnce,
+            NULL, CLSCTX_ALL,
+            IID_PPV_ARGS(&audioWriter)
+        );
+        if (FAILED(hr))
+        {
+            printf("Failed CoCreateInstance on dataWriter\n");
+            PrintHR(hr);
+        }
+    }
 
     // create a DiscRecorder object
     if (SUCCEEDED(hr))
     {
-        hr = GetDiscRecorder(index, &iDiscRecorder);
+        hr = GetDiscRecorder(index, &recorder);
         if (FAILED(hr))
         {
             printf("Failed GetDiscRecorder\n");
@@ -25,25 +38,13 @@ HRESULT RawWriter(PROGRAM_OPTIONS options)
         }
     }
 
+    // Set the recorder as the recorder for the audio writer
     if (SUCCEEDED(hr))
     {
-        hr = iDiscFormatRaw.CoCreateInstance(CLSID_MsftDiscFormat2RawCD);
-
+        hr = audioWriter->put_Recorder(recorder);
         if (FAILED(hr))
         {
-            printf("FAILED iDiscFormatRaw.CoCreateInstance\n");
-            PrintHR(hr);
-        }
-    }
-
-    // attach disc recorder and disc format
-    if (SUCCEEDED(hr))
-    {
-        hr = iDiscFormatRaw->put_Recorder(iDiscRecorder);
-
-        if (FAILED(hr))
-        {
-            printf("FAILED iDiscFormatRaw->put_Recorder\n");
+            printf("Failed audioWriter->put_Recorder\n");
             PrintHR(hr);
         }
     }
@@ -54,87 +55,95 @@ HRESULT RawWriter(PROGRAM_OPTIONS options)
     {
         BSTR appName = ::SysAllocString(L"Imapi2Sample");
 
-        hr = iDiscFormatRaw->put_ClientName(appName);
+        hr = audioWriter->put_ClientName(appName);
         if (FAILED(hr))
         {
-            printf("FAILED to set client name for Raw!\n");
+            printf("FAILED to set client name for Audio!\n");
             PrintHR(hr);
         }
         FreeSysStringAndNull(appName);
     }
 
-    // check if the current recorder and media support burning
-    VARIANT_BOOL recorderSupported = VARIANT_FALSE;
-    VARIANT_BOOL mediaSupported = VARIANT_FALSE;
-
+    // get the current media in the recorder
     if (SUCCEEDED(hr))
     {
-        hr = iDiscFormatRaw->IsRecorderSupported(iDiscRecorder, &recorderSupported);
-
+        IMAPI_MEDIA_PHYSICAL_TYPE mediaType = IMAPI_MEDIA_TYPE_UNKNOWN;
+        hr = audioWriter->get_CurrentPhysicalMediaType(&mediaType);
         if (FAILED(hr))
         {
-            printf("FAILED iDiscFormatRaw->IsRecorderSupported!\n");
+            printf("FAILED audioWriter->get_CurrentPhysicalMediaType\n");
             PrintHR(hr);
-        }
-
-        if (recorderSupported != VARIANT_TRUE)
-        {
-            printf("ERROR: recorder reports it doesn't support burning DAO RAW capabilities!\n");
-            hr = E_FAIL;
         }
     }
 
     if (SUCCEEDED(hr))
     {
-        hr = iDiscFormatRaw->IsCurrentMediaSupported(iDiscRecorder, &mediaSupported);
-
+        VARIANT_BOOL b;
+        hr = audioWriter->IsCurrentMediaSupported(recorder, &b);
         if (FAILED(hr))
         {
-            printf("FAILED iDiscFormatRaw->IsCurrentMediaSupported!\n");
-            PrintHR(hr);
-        }
-
-        if (mediaSupported != VARIANT_TRUE)
-        {
-            printf("ERROR: recorder reports the current media doesn't support burning DAO RAW!\n");
-            hr = E_FAIL;
+            hr = S_OK;
         }
     }
 
-    // create a raw image creator
+    // NOW PREPARE THE MEDIA, it will be ready to use
     if (SUCCEEDED(hr))
     {
-        hr = raw.CoCreateInstance(CLSID_MsftRawCDImageCreator);
-
+        hr = audioWriter->PrepareMedia();
         if (FAILED(hr))
         {
-            printf("FAILED raw.CoCreateInstance\n");
+            printf("Failed audioWriter->PrepareMedia()\n");
             PrintHR(hr);
         }
     }
 
-    // set the image type
+    //if (SUCCEEDED(hr) && !options.Close)
+    //{
+    //    hr = audioWriter->put_DoNotFinalizeDisc(VARIANT_FALSE);
+    //    if (FAILED(hr))
+    //    {
+    //        printf("FAILED audioWriter->get_NumberOfExistingTracks\n");
+    //        PrintHR(hr);
+    //    }
+    //}
+
+    // hookup events
+    // create an event object for the write engine
     if (SUCCEEDED(hr))
     {
-        hr = raw->put_ResultingImageType(IMAPI_FORMAT2_RAW_CD_SUBCODE_IS_RAW); //IMAPI_FORMAT2_RAW_CD_SUBCODE_PQ_ONLY);
-
+        hr = CComObject<CAudioEvent>::CreateInstance(&eventSink);
         if (FAILED(hr))
         {
-            printf("FAILED raw->put_ResultingImageType\n");
+            printf("Failed to create event sink\n");
+            PrintHR(hr);
+        }
+        else
+        {
+            eventSink->AddRef();
+        }
+    }
+
+    // hookup the event
+    if (SUCCEEDED(hr))
+    {
+        hr = eventSink->DispEventAdvise(audioWriter);
+        if (FAILED(hr))
+        {
+            printf("Failed to hookup event sink\n");
             PrintHR(hr);
         }
     }
 
-    // Add tracks
+    // Add a track
     if (SUCCEEDED(hr))
     {
         WCHAR             AppendPath[MAX_PATH];
         WCHAR             FullPath[MAX_PATH];
         DWORD             ReturnCode;
+        //	    DWORD             FileAttributes;
         HANDLE            Files;
         WIN32_FIND_DATAW  FileData;
         memset(&FileData, 0, sizeof(WIN32_FIND_DATA));
-        LONG index = 0;
 
 
         StringCchPrintfW(AppendPath, (sizeof(AppendPath)) / (sizeof(AppendPath[0])), (L"%s\\*"), options.FileName);
@@ -199,12 +208,12 @@ HRESULT RawWriter(PROGRAM_OPTIONS options)
 
                     if (SUCCEEDED(hr))
                     {
-                        //Add the track to the stream
+                        //write the stream
                         printf("adding track now...\n");
-                        hr = raw->AddTrack(IMAPI_CD_SECTOR_AUDIO, testStream, &index);
+                        hr = audioWriter->AddAudioTrack(testStream);
                         if (FAILED(hr))
                         {
-                            printf("FAILED raw->AddTrack(testStream)\n");
+                            printf("FAILED audioWriter->AddAudioTrack(testStream)\n");
                             PrintHR(hr);
                         }
                         else
@@ -243,75 +252,49 @@ HRESULT RawWriter(PROGRAM_OPTIONS options)
         }
     }
 
-    // create the disc image    
+    // unhook events
+    if (NULL != eventSink)
+    {
+        eventSink->DispEventUnadvise(audioWriter);
+    }
+
+    // Release the media now that we are done
     if (SUCCEEDED(hr))
     {
-        raw->CreateResultImage(&resultStream);
-
+        hr = audioWriter->ReleaseMedia();
         if (FAILED(hr))
         {
-            printf("FAILED raw->CreateResultImage\n");
+            printf("FAILED audioWriter->ReleaseMedia()\n");
             PrintHR(hr);
         }
     }
 
-    // prepare media
+    // Let's clear the recorder also
     if (SUCCEEDED(hr))
     {
-        hr = iDiscFormatRaw->PrepareMedia();
-
+        hr = audioWriter->put_Recorder(NULL);
         if (FAILED(hr))
         {
-            printf("FAILED iDiscFormatRaw->PrepareMedia\n");
+            printf("FAILED audioWriter->put_Recorder(NULL)\n");
             PrintHR(hr);
         }
     }
 
-    // set up options on disc format
-    // NOTE: this will change later to put a different mode when it's fully implemented
+    ReleaseAndNull(eventSink);
+    ReleaseAndNull(audioWriter);
+    ReleaseAndNull(recorder);
+
     if (SUCCEEDED(hr))
     {
-        hr = iDiscFormatRaw->put_RequestedSectorType(IMAPI_FORMAT2_RAW_CD_SUBCODE_IS_RAW); //IMAPI_FORMAT2_RAW_CD_SUBCODE_PQ_ONLY);
-
-        if (FAILED(hr))
-        {
-            printf("FAILED iDiscFormatRaw->put_RequestedSectorType\n");
-            PrintHR(hr);
-        }
+        printf("AudioWriter succeeded for drive index %d\n",
+            index
+        );
     }
-
-    // connect events
-    //if (SUCCEEDED(hr))
-    //{
-    //    hr = events->DispEventAdvise(iDiscFormatRaw);
-
-    //    if (FAILED(hr))
-    //    {
-    //        printf("FAILED events->DispEventAdvise\n");
-    //        PrintHR(hr);
-    //    }
-    //}
-
-    // burn stream
-    if (SUCCEEDED(hr))
+    else
     {
-        hr = iDiscFormatRaw->WriteMedia(resultStream);
-
-        if (FAILED(hr))
-        {
-            printf("FAILED iDiscFormatRaw->WriteMedia\n");
-            PrintHR(hr);
-        }
+        printf("AudioWriter FAILED for drive index %d\n", index);
+        PrintHR(hr);
     }
-
-    // unadvise events
-    //if (events != NULL)
-    //{
-    //    events->DispEventUnadvise(iDiscFormatRaw);
-    //}
-
-    // release media (even if the burn failed)
-    hr = iDiscFormatRaw->ReleaseMedia();
-
     return hr;
 }
+

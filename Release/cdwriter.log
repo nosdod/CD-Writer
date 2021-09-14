@@ -1,2 +1,0 @@
-﻿LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/OPT:ICF' specification
-  cdwriter.vcxproj -> Z:\CD-Writer\Release\cdwriter.exe
